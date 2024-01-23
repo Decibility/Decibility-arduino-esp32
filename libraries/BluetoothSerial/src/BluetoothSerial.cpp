@@ -839,8 +839,11 @@ static bool _init_bt(const char *deviceName, bt_mode mode)
         return false;
     }
 
-    log_i("device name set");
-    esp_bt_dev_set_device_name(deviceName);
+    if (esp_bt_dev_set_device_name(deviceName) != ESP_OK)
+    {
+        log_e("Device Name set failed");
+        return false;
+    }
 
 #ifdef CONFIG_BT_SSP_ENABLED
     if (_enableSSP)
@@ -868,16 +871,22 @@ static bool _init_bt(const char *deviceName, bt_mode mode)
     }
 #endif
 
-    // the default BTA_DM_COD_LOUDSPEAKER does not work with the macOS BT stack
     esp_bt_cod_t cod;
-    cod.major = 0b00001;
-    cod.minor = 0b000100;
-    cod.service = 0b00000010110;
+    cod.major = ESP_BT_COD_MAJOR_DEV_HEALTH;
+    cod.minor = 0;
+    cod.service = 0;
     if (esp_bt_gap_set_cod(cod, ESP_BT_INIT_COD) != ESP_OK)
     {
         log_e("set cod failed");
         return false;
     }
+
+    if (esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE) != ESP_OK)
+    {
+        log_e("GAP set scan mode failed!");
+        return false;
+    }
+
     return true;
 }
 
